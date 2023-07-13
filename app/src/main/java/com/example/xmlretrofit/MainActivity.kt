@@ -6,74 +6,201 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderColors
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.xmlretrofit.ui.theme.RetrofitInstance
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.example.xmlretrofit.models.Programme
+import com.example.xmlretrofit.models.Tv
 import com.example.xmlretrofit.ui.theme.XmlRetrofitTheme
-import kotlinx.coroutines.runBlocking
+import com.example.xmlretrofit.util.Resource
+import com.example.xmlretrofit.util.Status
+import dagger.hilt.android.AndroidEntryPoint
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.TimeZone
+import javax.security.auth.login.LoginException
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val viewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             XmlRetrofitTheme {
-                val viewModel: MainViewModel by viewModels()
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = Color.Black
                 ) {
-//                    CreditCardScreen(viewModel
-                    val apiService = RetrofitInstance.apiService
-                    runBlocking {
-                        val response = apiService.getPosts()
-                        if (response.isSuccessful) {
-                            val tvGuide = response.body()
-                            tvGuide?.let {
-                                Log.e("DamanTag","Channel Display Name: ${it.generatorInfoName.toString()}")
-                                Log.e("DamanTag","Programme Title: ${it.channel!!.url.toString()}")
-                                Log.e("DamanTag","Programme Title: ${it.channel!!.displayname.toString()}")
-                                Log.e("DamanTag","Programme Title: ${it.programme!!.get(1).title.toString()}")
-//                                Log.e("TAg","Programme Title: ${it.channel!!.id.toString()}")
-//                                Log.e("TAg","Programme Sub Title: ${it.programmes.get(0).subTitle}")
-//                                Log.e("TAg","Programme Description: ${it.programmes.get(0).desc}")
-                            }
-                        } else {
-                            Log.e("DamanTag","Error: ${response.message()}")
-                        }
-                    }
+                    val resourceState by viewModel.res.collectAsState()
+                    ProgramRowItems(resourceState)
+//                    val dateString = "2023-07-04T21:46:22.000+0000"
+//                    val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+//                    val outputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+//
+//                    val dateTime = inputFormat.parse(dateString)
+//                    Log.e("TAG", "onCreate: ${dateTime.time}")
+//                      MySliderDemo()
+
                 }
             }
         }
     }
 }
-//@Composable
-//fun CreditCardScreen(viewModel: MainViewModel) {
-//    val creditCards:List<XMLModel> by viewModel.post.collectAsState(initial = emptyList())
-//
-//    LaunchedEffect(Unit) {
-//        viewModel.fetchPosts()
+
+
+@Composable
+fun ProgramRowItems(resourceState: Resource<Tv>) {
+    when (resourceState.status) {
+        Status.LOADING -> {
+            CircularProgressIndicator()
+        }
+
+        Status.SUCCESS -> {
+            val tvProgram = resourceState.data!!
+            LazyRow {
+                items(tvProgram.programme!!) {
+                    CardUi(programme = it)
+                }
+            }
+        }
+
+        Status.ERROR -> {
+            val errorMessage = resourceState.message
+            Text(text = "Error: $errorMessage")
+        }
+    }
+}
+
+@Composable
+fun CardUi(programme: Programme, modifier: Modifier = Modifier) {
+
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    val duration = programme.length / 60
+    val cardWidth = when {
+        duration >= 50 -> screenWidth * 0.8f
+        duration >= 30 -> screenWidth * 0.6f
+        else -> screenWidth * 0.5f
+    }
+
+//    val date = convertTimestampToDate(programme.start)
+//    if (isToday(date)) {
+////        if (currentTimeProgrammesOnly(enddate)) {
+            Column(
+                modifier = modifier
+                    .padding(horizontal = 10.dp)
+                    .width(cardWidth)
+                    .height(145.dp)
+            ) {
+                Text(text = convertTimestampToTime(programme.start), color = Color.White)
+                Spacer(modifier = modifier.height(8.dp))
+                Divider(color = Color.White, thickness = 1.dp)
+                Spacer(modifier = modifier.height(8.dp))
+                Card(
+                    shape = RectangleShape,
+                    colors = CardDefaults.cardColors(Color.Red),
+                ) {
+                    Column(
+                        modifier
+                            .padding(10.dp)
+                            .fillMaxSize()
+                    ) {
+                        Text(text = programme.title + " :", color = Color.White, maxLines = 1)
+                        Spacer(modifier = modifier.height(10.dp))
+                        Text(
+                            text = programme.desc,
+                            color = Color.White,
+                            maxLines = 2,
+                            overflow = TextOverflow.Clip
+                        )
+                    }
+                }
+            }
+//        }
 //    }
-//
-//    Column {
-//
-//            // Display the list of credit cards
-//            LazyColumn {
-//                items(creditCards) { creditCard ->
-//                    Text(text = creditCard.language.toString(), color = Color.Black)
-//                }
-//            }
-//
+}
+
+
+fun convertTimestampToTime(timestamp: String): String {
+    val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+    val outputFormat = SimpleDateFormat("hh:mm a ", Locale.getDefault())
+    val dateTime = inputFormat.parse(timestamp)
+    return outputFormat.format(dateTime!!)
+}
+
+fun convertTimestampToDate(timestamp: String): Long {
+    val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+    val dateTime = inputFormat.parse(timestamp)
+    return dateTime!!.time
+}
+
+fun isToday(timestamp: Long): Boolean {
+    val currentcalendar = Calendar.getInstance()
+    val programCalendar = Calendar.getInstance()
+    programCalendar.timeInMillis = timestamp
+    return programCalendar.get(Calendar.DATE) == currentcalendar.get(Calendar.DATE)
+}
+
+
+fun currentTimeProgrammesOnly(timestamp: Long): Boolean {
+    val currentcalendar = Calendar.getInstance()
+    val programCalendar = Calendar.getInstance()
+    programCalendar.timeInMillis = timestamp
+
+    if ( programCalendar.timeInMillis.compareTo(currentcalendar.timeInMillis) == 1 || programCalendar.timeInMillis.compareTo(currentcalendar.timeInMillis) == 0 ) {
+        return true
+    }
+    return false
+}
+
+
+//fun todayProgrammesList(programme: Programme): List<Programme> {
+//    val date = convertTimestampToDate(programme.start)
+//    val programmList: MutableList<Programme> = mutableListOf()
+//    if (isToday(date)) {
+//        programmList.add(
+//            Programme(
+//                programme.start,
+//                programme.stop,
+//                programme.channel,
+//                programme.title,
+//                programme.desc,
+//                programme.length
+//            )
+//        )
 //    }
+//    return programmList
 //}

@@ -1,6 +1,6 @@
-package com.example.xmlretrofit.ui.theme
+package com.example.xmlretrofit
 
-import com.example.xmlretrofit.ApiService
+import com.example.xmlretrofit.api.ApiService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.simpleframework.xml.convert.AnnotationStrategy

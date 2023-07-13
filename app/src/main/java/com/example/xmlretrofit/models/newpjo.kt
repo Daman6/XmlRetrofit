@@ -1,11 +1,9 @@
-package com.example.xmlretrofit
+package com.example.xmlretrofit.models
 
 import org.simpleframework.xml.Attribute
 import org.simpleframework.xml.Element
 import org.simpleframework.xml.ElementList
-import org.simpleframework.xml.Path
 import org.simpleframework.xml.Root
-import retrofit2.http.Field
 
 @Root(name = "Tv", strict = false)
 data class Tv(
@@ -67,6 +65,14 @@ data class Programme(
 
     @field:Element(name = "title")
     @param:Element(name = "title")
-    var title: String = ""
+    var title: String = "",
+
+    @field:Element(name = "desc")
+    @param:Element(name = "desc")
+    var desc: String = "",
+
+    @field:Element(name = "length")
+    @param:Element(name = "length")
+    var length: Int = 0
 )
 

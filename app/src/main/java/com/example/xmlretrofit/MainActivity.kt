@@ -5,7 +5,9 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +21,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Card
@@ -26,6 +29,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderColors
 import androidx.compose.material3.SliderDefaults
@@ -87,7 +91,7 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun ProgramRowItems(resourceState: Resource<Tv>) {
+fun ProgramRowItems(resourceState: Resource<Tv>,viewModel:MainViewModel= androidx.lifecycle.viewmodel.compose.viewModel()) {
     when (resourceState.status) {
         Status.LOADING -> {
             CircularProgressIndicator()
@@ -96,8 +100,8 @@ fun ProgramRowItems(resourceState: Resource<Tv>) {
         Status.SUCCESS -> {
             val tvProgram = resourceState.data!!
             LazyRow {
-                items(tvProgram.programme!!) {
-                    CardUi(programme = it)
+                itemsIndexed(viewModel.items) { index,item->
+                    CardUi(programme = item,index = index)
                 }
             }
         }
@@ -110,7 +114,7 @@ fun ProgramRowItems(resourceState: Resource<Tv>) {
 }
 
 @Composable
-fun CardUi(programme: Programme, modifier: Modifier = Modifier) {
+fun CardUi(programme: Programme, index : Int,viewModel:MainViewModel= androidx.lifecycle.viewmodel.compose.viewModel(),modifier: Modifier = Modifier) {
 
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val duration = programme.length / 60
@@ -129,6 +133,11 @@ fun CardUi(programme: Programme, modifier: Modifier = Modifier) {
         Divider(color = Color.White, thickness = 1.dp, modifier = Modifier.width(cardWidth))
         Spacer(modifier = Modifier.height(8.dp))
 
+        Box(
+            modifier = Modifier
+                .width(cardWidth)
+                .height(80.dp)
+        ) {
         Card(
             shape = RectangleShape,
             colors = CardDefaults.cardColors(Color.Red),
@@ -160,9 +169,18 @@ fun CardUi(programme: Programme, modifier: Modifier = Modifier) {
                 }
             }
         }
+            if (index == 0) {
+            LinearProgressIndicator(
+                progress = animateFloatAsState(targetValue = viewModel.progress.value).value,
+                modifier = Modifier
+                    .width(150.dp)
+                    .height(80.dp),
+                trackColor = Color.Transparent,
+                color = Color.Gray.copy(0.5f)
+            )
+        }
+        }
     }
-//        }
-//    }
 }
 
 
